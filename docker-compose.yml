@@ -1,0 +1,75 @@
+# =============================================================================
+# Docker Compose for Local Development
+# =============================================================================
+# Start:   docker-compose up -d
+# Stop:    docker-compose down
+# Logs:    docker-compose logs -f api
+# =============================================================================
+
+version: "3.8"
+
+services:
+  # ---------------------------------------------------------------------------
+  # FastAPI Application
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      target: development
+    container_name: zml-api
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount source code for hot reload
+      - ./app:/app/app:ro
+      - ./.env:/app/.env:ro
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    depends_on:
+      firestore-emulator:
+        condition: service_healthy
+    networks:
+      - zml-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Firestore Emulator
+  # ---------------------------------------------------------------------------
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    container_name: firestore-emulator
+    command: >
+      gcloud emulators firestore start
+      --host-port=0.0.0.0:8080
+      --project=demo-project
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - zml-network
+
+  # ---------------------------------------------------------------------------
+  # Firestore Emulator UI (optional)
+  # ---------------------------------------------------------------------------
+  # Uncomment to use Firebase Emulator UI
+  # firebase-ui:
+  #   image: node:18-alpine
+  #   container_name: firebase-ui
+  #   working_dir: /app
+  #   command: npx firebase-tools emulators:start --only firestore
+  #   ports:
+  #     - "4000:4000"  # Emulator UI
+  #   networks:
+  #     - zml-network
+
+networks:
+  zml-network:
+    driver: bridge

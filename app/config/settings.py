@@ -64,7 +64,7 @@ class Settings(BaseSettings):
 
     # Server
     host: str = Field(
-        default="0.0.0.0",
+        default="0.0.0.0",  # nosec B104 - intentional for container binding
         description="Server host",
     )
     port: int = Field(

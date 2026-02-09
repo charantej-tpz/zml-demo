@@ -5,7 +5,7 @@ Provides access to Firebase Realtime Database through the Admin SDK.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from firebase_admin import db
 
@@ -183,12 +183,7 @@ class RealtimeDBOperations:
         """
         try:
             ref = self._get_ref(path)
-            result = (
-                ref.order_by_child(child_key)
-                .equal_to(value)
-                .limit_to_first(limit)
-                .get()
-            )
+            result = ref.order_by_child(child_key).equal_to(value).limit_to_first(limit).get()
             return result or {}
         except Exception as e:
             logger.error(f"Error querying data at {path}: {e}")

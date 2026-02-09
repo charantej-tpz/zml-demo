@@ -82,11 +82,16 @@ def create_application() -> FastAPI:
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add request context middleware for logging
+    from app.middleware.request_context import RequestContextMiddleware
+
+    app.add_middleware(RequestContextMiddleware)
 
     # Register exception handlers
     register_exception_handlers(app)

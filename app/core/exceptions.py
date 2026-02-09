@@ -126,6 +126,54 @@ class DatabaseError(APIException):
         )
 
 
+class AuthenticationError(APIException):
+    """Authentication/token verification error exception."""
+
+    def __init__(
+        self,
+        detail: str = "Authentication failed",
+        error_code: str = "AUTHENTICATION_ERROR",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            error_code=error_code,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class TokenExpiredError(APIException):
+    """Token expired exception."""
+
+    def __init__(
+        self,
+        detail: str = "Token has expired",
+        error_code: str = "TOKEN_EXPIRED",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            error_code=error_code,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class InvalidTokenError(APIException):
+    """Invalid token exception."""
+
+    def __init__(
+        self,
+        detail: str = "Invalid token",
+        error_code: str = "INVALID_TOKEN",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            error_code=error_code,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 def create_error_response(
     status_code: int,
     detail: str,

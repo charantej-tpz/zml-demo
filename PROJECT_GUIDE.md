@@ -151,11 +151,11 @@ FIRESTORE_EMULATOR_HOST=localhost:8080
    ```bash
    gcloud iam service-accounts create zml-api-sa \
      --display-name="ZML API Service Account"
-   
+
    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
      --member="serviceAccount:zml-api-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
      --role="roles/datastore.user"
-   
+
    gcloud iam service-accounts keys create credentials.json \
      --iam-account=zml-api-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
    ```
@@ -208,66 +208,228 @@ docker-compose down
 
 ## Development Workflow
 
-### Adding a New Endpoint
+### Architecture Overview
 
-1. **Create schema** in `app/schemas/`:
-   ```python
-   # app/schemas/user.py
-   from pydantic import BaseModel
-   
-   class UserCreate(BaseModel):
-       name: str
-       email: str
-   
-   class User(UserCreate):
-       id: str
-   ```
+The application follows SOLID principles with a layered architecture:
 
-2. **Create repository** in `app/repositories/`:
-   ```python
-   # app/repositories/user.py
-   from app.repositories.base import BaseRepository
-   from app.schemas.user import User
-   
-   class UserRepository(BaseRepository[User]):
-       collection_name = "users"
-       model_class = User
-   ```
+```
+┌─────────────┐     ┌─────────────────┐     ┌─────────────────────┐     ┌───────────────┐
+│  Endpoint   │ --> │    Service      │ --> │    Repository       │ --> │   Database    │
+│  (API)      │     │  (Logic)        │     │  (Data Access)      │     │  (Firebase)   │
+└─────────────┘     └─────────────────┘     └─────────────────────┘     └───────────────┘
+       │                    │                        │
+   Depends on:          Depends on:              Uses:
+   IService            IRepository           RealtimeDBOperations
+```
 
-3. **Create service** in `app/services/`:
-   ```python
-   # app/services/user.py
-   from app.repositories.user import UserRepository
-   
-   class UserService:
-       def __init__(self):
-           self.repo = UserRepository()
-       
-       async def create_user(self, data: dict) -> str:
-           return await self.repo.create(data)
-   ```
+| Layer | Responsibility | Location |
+|-------|----------------|----------|
+| Endpoint | HTTP handling, validation | `app/api/v1/endpoints/` |
+| Service | Business logic | `app/services/` |
+| Repository | Data access | `app/repositories/` |
+| Database | Low-level Firebase ops | `app/db/` |
 
-4. **Create endpoint** in `app/api/v1/endpoints/`:
-   ```python
-   # app/api/v1/endpoints/users.py
-   from fastapi import APIRouter
-   from app.schemas.user import User, UserCreate
-   from app.services.user import UserService
-   
-   router = APIRouter()
-   service = UserService()
-   
-   @router.post("/", response_model=User)
-   async def create_user(user: UserCreate):
-       user_id = await service.create_user(user.model_dump())
-       return {"id": user_id, **user.model_dump()}
-   ```
+### Adding a New Feature (SOLID Pattern)
 
-5. **Register router** in `app/api/v1/router.py`:
-   ```python
-   from app.api.v1.endpoints import users
-   router.include_router(users.router, prefix="/users", tags=["Users"])
-   ```
+#### 1. Create Repository Interface
+
+```python
+# app/interfaces/repositories/users.py
+from abc import abstractmethod
+from app.interfaces.repositories.base import IRepository
+
+class IUserRepository(IRepository[UserData]):
+    """Domain-specific interface for user operations."""
+
+    @abstractmethod
+    async def get_by_email(self, email: str) -> UserData:
+        pass
+```
+
+#### 2. Create Repository Implementation
+
+```python
+# app/repositories/user_repository.py
+from app.interfaces.repositories.users import IUserRepository
+from app.db.realtime_db import RealtimeDBOperations
+
+class UserRepository(IUserRepository):
+    def __init__(self, rdb: RealtimeDBOperations):
+        self.rdb = rdb  # Low-level DB operations
+
+    async def get_by_email(self, email: str) -> UserData:
+        # Implement data access...
+        pass
+```
+
+#### 3. Create Service Interface
+
+```python
+# app/interfaces/users.py
+from abc import ABC, abstractmethod
+
+class IUserService(ABC):
+    @abstractmethod
+    async def create_user(self, data: dict) -> str:
+        pass
+```
+
+#### 4. Create Service Implementation
+
+```python
+# app/services/users.py
+from app.interfaces.repositories.users import IUserRepository
+from app.interfaces.users import IUserService
+
+class UserService(IUserService):
+    def __init__(self, repo: IUserRepository):
+        self.repo = repo  # Depends on abstraction!
+
+    async def create_user(self, data: dict) -> str:
+        # Business logic here
+        return await self.repo.create(data)
+```
+
+#### 5. Create Schema
+
+```python
+# app/schemas/user.py
+from pydantic import BaseModel
+
+class UserCreate(BaseModel):
+    name: str
+    email: str
+```
+
+#### 6. Create Endpoint with Dependency Injection
+
+```python
+# app/api/v1/endpoints/users.py
+from fastapi import APIRouter, Depends
+from app.db.realtime_db import RealtimeDBOperations
+from app.interfaces.users import IUserService
+from app.repositories.user_repository import UserRepository
+from app.services.users import UserService
+
+router = APIRouter(prefix="/users", tags=["Users"])
+
+def get_user_service() -> IUserService:
+    """Wire up the dependency chain."""
+    rdb = RealtimeDBOperations(base_path="users")
+    repo = UserRepository(rdb)
+    return UserService(repo)
+
+@router.post("/")
+async def create_user(
+    data: UserCreate,
+    service: IUserService = Depends(get_user_service)
+):
+    return await service.create_user(data.model_dump())
+```
+
+#### 7. Register Router
+
+```python
+# app/api/v1/router.py
+from app.api.v1.endpoints import users
+router.include_router(users.router)
+```
+
+### SOLID Compliance
+
+| Principle | Implementation |
+|-----------|---------------|
+| **S**ingle Responsibility | Service = logic, Repository = data access |
+| **O**pen/Closed | Add new features without modifying existing code |
+| **L**iskov Substitution | Swap Firebase for PostgreSQL via interface |
+| **I**nterface Segregation | Each domain has focused interface |
+| **D**ependency Inversion | Service → IRepository (abstraction) |
+
+### Project Structure
+
+```
+app/
+├── interfaces/
+│   ├── repositories/       # Repository abstractions
+│   │   ├── base.py         # IRepository[T]
+│   │   └── vitals.py       # IVitalsRepository
+│   ├── vitals.py           # IVitalsService
+│   └── authentication.py   # IAuthenticationService
+├── repositories/
+│   ├── base.py             # BaseRepository (Firestore)
+│   ├── realtime_base.py    # RealtimeBaseRepository
+│   └── vitals_repository.py
+├── services/
+│   ├── vitals.py
+│   └── authentication.py
+├── db/
+│   ├── firestore.py        # Firestore operations
+│   └── realtime_db.py      # Realtime DB operations
+└── api/v1/endpoints/
+    ├── vitals.py
+    └── authentication.py
+```
+
+### Example: Adding "Medications" Feature
+
+#### Files to Create
+
+```
+app/
+├── interfaces/
+│   ├── repositories/
+│   │   └── medications.py         ← 1. IRepository interface
+│   └── medications.py             ← 2. IService interface
+├── schemas/
+│   └── medications.py             ← 3. Pydantic models
+├── repositories/
+│   └── medications_repository.py  ← 4. Data access
+├── services/
+│   └── medications.py             ← 5. Business logic
+└── api/v1/endpoints/
+    └── medications.py             ← 6. HTTP endpoint
+```
+
+#### What Each File Does
+
+| # | File | Purpose | Contains |
+|---|------|---------|----------|
+| 1 | `interfaces/repositories/medications.py` | Contract for data ops | `IMedicationsRepository` |
+| 2 | `interfaces/medications.py` | Contract for business logic | `IMedicationsService` |
+| 3 | `schemas/medications.py` | Request/response validation | `MedicationCreate`, `MedicationResponse` |
+| 4 | `repositories/medications_repository.py` | Firebase CRUD | Uses `RealtimeDBOperations` |
+| 5 | `services/medications.py` | Logic (dosage calc, validation) | Depends on `IMedicationsRepository` |
+| 6 | `api/v1/endpoints/medications.py` | HTTP routes | `POST /medications`, wires dependencies |
+
+#### Dependency Flow
+
+```
+POST /api/v1/medications
+           ↓
+   ┌───────────────────┐
+   │  Endpoint (HTTP)  │  ← Handles request, injects service
+   └─────────┬─────────┘
+             ↓
+   ┌───────────────────┐
+   │  Service (Logic)  │  ← Business rules, validation
+   └─────────┬─────────┘
+             ↓
+   ┌───────────────────┐
+   │ Repository (Data) │  ← CRUD operations
+   └─────────┬─────────┘
+             ↓
+   ┌───────────────────┐
+   │ RealtimeDB (Firebase) │  ← Low-level SDK
+   └───────────────────┘
+```
+
+#### Final Step: Register Router
+
+```python
+# app/api/v1/router.py
+from app.api.v1.endpoints import medications
+router.include_router(medications.router)
+```
 
 ---
 

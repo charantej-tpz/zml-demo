@@ -7,7 +7,7 @@ Provides common CRUD operations that can be extended by specific repositories.
 import logging
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
-from google.cloud.firestore_v1 import Client, DocumentReference, DocumentSnapshot
+from google.cloud.firestore_v1 import Client, DocumentSnapshot
 from pydantic import BaseModel
 
 from app.core.exceptions import DatabaseError, NotFoundError
@@ -193,9 +193,7 @@ class BaseRepository(Generic[T]):
             List of matching model instances.
         """
         try:
-            docs = (
-                self.collection.where(field, operator, value).limit(limit).stream()
-            )
+            docs = self.collection.where(field, operator, value).limit(limit).stream()
             return [self._doc_to_model(doc) for doc in docs if doc.exists]
         except Exception as e:
             logger.error(f"Error querying documents: {e}")

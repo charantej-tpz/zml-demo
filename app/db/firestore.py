@@ -45,15 +45,11 @@ def get_firestore_client() -> Client:
         # Configure for emulator if enabled
         if settings.use_firestore_emulator:
             os.environ["FIRESTORE_EMULATOR_HOST"] = settings.firestore_emulator_host
-            logger.info(
-                f"Connecting to Firestore emulator at {settings.firestore_emulator_host}"
-            )
+            logger.info(f"Connecting to Firestore emulator at {settings.firestore_emulator_host}")
 
         # Set credentials path if provided
         if settings.service_account_credentials_path:
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-                settings.service_account_credentials_path
-            )
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.service_account_credentials_path
 
         # Initialize client
         # Note: project_id is automatically extracted from the service account JSON
@@ -64,9 +60,7 @@ def get_firestore_client() -> Client:
 
         _firestore_client = firestore.Client(**client_kwargs)
 
-        logger.info(
-            f"Firestore client initialized for project: {_firestore_client.project}"
-        )
+        logger.info(f"Firestore client initialized for project: {_firestore_client.project}")
 
         return _firestore_client
 
@@ -103,7 +97,9 @@ async def check_firestore_connection() -> bool:
         # Perform a lightweight operation to check connectivity
         # List collections with a limit of 1
         collections = list(client.collections())
-        logger.debug(f"Firestore connection check passed. Found {len(collections)} root collections.")
+        logger.debug(
+            f"Firestore connection check passed. Found {len(collections)} root collections."
+        )
         return True
     except Exception as e:
         logger.error(f"Firestore connection check failed: {e}")

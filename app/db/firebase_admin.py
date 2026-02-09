@@ -5,7 +5,6 @@ Provides centralized Firebase Admin initialization that supports both
 Firestore and Realtime Database through a single credentials file.
 """
 
-import json
 import logging
 import os
 from typing import Optional
@@ -55,14 +54,13 @@ def get_firebase_app() -> firebase_admin.App:
     cred = None
 
     # Priority 1: Service account credentials path from settings
-    if settings.service_account_credentials_path:
-        if os.path.exists(settings.service_account_credentials_path):
-            cred = credentials.Certificate(settings.service_account_credentials_path)
-            logger.info(f"Using service account credentials from: {settings.service_account_credentials_path}")
+    creds_path = settings.service_account_credentials_path
+    if creds_path:
+        if os.path.exists(creds_path):
+            cred = credentials.Certificate(creds_path)
+            logger.info(f"Using service account credentials from: {creds_path}")
         else:
-            raise ValueError(
-                f"Service account credentials file not found: {settings.service_account_credentials_path}"
-            )
+            raise ValueError(f"Service account credentials not found: {creds_path}")
 
     # Priority 2: Environment variable GOOGLE_APPLICATION_CREDENTIALS (fallback)
     elif os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):

@@ -3,6 +3,7 @@ Tests for application configuration and settings.
 """
 
 import os
+
 import pytest
 
 
@@ -14,7 +15,7 @@ class TestSettings:
         from app.config.settings import Settings
 
         settings = Settings()
-        
+
         assert settings.environment.value == "development"
         assert settings.port == 8080
         assert settings.api_prefix == "/api/v1"
@@ -24,13 +25,14 @@ class TestSettings:
         """Test settings can be loaded from environment variables."""
         os.environ["APP_NAME"] = "Test API"
         os.environ["PORT"] = "9000"
-        
+
         from app.config.settings import Settings
+
         settings = Settings()
-        
+
         assert settings.app_name == "Test API"
         assert settings.port == 9000
-        
+
         # Cleanup
         del os.environ["APP_NAME"]
         del os.environ["PORT"]
@@ -40,7 +42,7 @@ class TestSettings:
         from app.config.settings import Settings
 
         settings = Settings(cors_origins="http://localhost:3000,http://localhost:8080")
-        
+
         origins = settings.cors_origins_list
         assert len(origins) == 2
         assert "http://localhost:3000" in origins
@@ -56,15 +58,16 @@ class TestSettings:
 
     def test_log_level_validation_invalid(self):
         """Test log level validation rejects invalid levels."""
-        from app.config.settings import Settings
         from pydantic import ValidationError
+
+        from app.config.settings import Settings
 
         with pytest.raises(ValidationError):
             Settings(log_level="INVALID")
 
     def test_environment_properties(self):
         """Test environment check properties."""
-        from app.config.settings import Settings, Environment
+        from app.config.settings import Environment, Settings
 
         dev_settings = Settings(environment=Environment.DEVELOPMENT)
         assert dev_settings.is_development is True

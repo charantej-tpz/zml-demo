@@ -10,9 +10,10 @@ import logging
 from fastapi import APIRouter, status
 
 from app.api.deps import SettingsDep
+from app.db.firebase_admin import get_firebase_app
 from app.db.firestore import check_firestore_connection
 from app.db.realtime_db import check_realtime_db_connection
-from app.schemas.common import HealthStatus, ReadinessStatus
+from app.schemas.common import HealthStatus
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +43,18 @@ async def health_check(settings: SettingsDep) -> HealthStatus:
 
 @router.get(
     "/health/ready",
-    response_model=ReadinessStatus,
     status_code=status.HTTP_200_OK,
     summary="Readiness Check",
-    description="Readiness probe that checks all dependencies including Firestore and Realtime Database.",
+    description="Readiness probe checking Firestore and Realtime Database.",
 )
-async def readiness_check(settings: SettingsDep) -> ReadinessStatus:
+async def readiness_check(settings: SettingsDep):
     """
     Readiness check endpoint.
 
     Verifies that the application is ready to receive traffic by checking:
     - Firestore connectivity
     - Realtime Database connectivity (if configured)
+    - Firebase project details
 
     Returns detailed status of each dependency.
     """
@@ -68,6 +69,17 @@ async def readiness_check(settings: SettingsDep) -> ReadinessStatus:
         rtdb_healthy = await check_realtime_db_connection()
         checks["realtime_db"] = "healthy" if rtdb_healthy else "unhealthy"
 
+    # Get Firebase project details
+    firebase_info = {}
+    try:
+        firebase_app = get_firebase_app()
+        firebase_info["project_id"] = firebase_app.project_id
+        firebase_info["name"] = firebase_app.name
+        firebase_info["status"] = "connected"
+    except Exception as e:
+        firebase_info["status"] = "error"
+        firebase_info["error"] = str(e)
+
     # Determine overall status
     all_healthy = all(status == "healthy" for status in checks.values())
     overall_status = "ready" if all_healthy else "not_ready"
@@ -75,8 +87,8 @@ async def readiness_check(settings: SettingsDep) -> ReadinessStatus:
     if not all_healthy:
         logger.warning(f"Readiness check failed: {checks}")
 
-    return ReadinessStatus(
-        status=overall_status,
-        checks=checks,
-    )
-
+    return {
+        "status": overall_status,
+        "checks": checks,
+        "firebase": firebase_info,
+    }

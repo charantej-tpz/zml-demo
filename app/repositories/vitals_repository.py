@@ -82,7 +82,7 @@ class VitalsRepository(IVitalsRepository):
             # Add updated_at timestamp
             data_with_timestamp = {
                 **data,
-                "updated_at": firebase_db.ServerValue.TIMESTAMP,
+                "updated_at": firebase_rdb.ServerValue.TIMESTAMP,
             }
             self.rdb.update(f"users/{id}/vitals", data_with_timestamp)
         except Exception as e:

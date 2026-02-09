@@ -65,6 +65,23 @@ async def check_realtime_db_connection() -> bool:
         return False
 
 
+def get_realtime_client(base_path: str = "") -> "RealtimeDBOperations":
+    """
+    Get a Realtime Database client (similar to get_firestore_client).
+
+    Args:
+        base_path: Base path for all operations (e.g., "medical_dashboard").
+
+    Returns:
+        RealtimeDBOperations instance.
+
+    Example:
+        rdb = get_realtime_client("medical_dashboard")
+        data = rdb.get("users/user123")
+    """
+    return RealtimeDBOperations(base_path=base_path)
+
+
 class RealtimeDBOperations:
     """
     Utility class for common Realtime Database operations.

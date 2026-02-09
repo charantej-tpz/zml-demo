@@ -34,26 +34,26 @@ class BaseRepository(Generic[T]):
     collection_name: str = ""
     model_class: Type[T]
 
-    def __init__(self, client: Optional[Client] = None) -> None:
+    def __init__(self, db: Optional[Client] = None) -> None:
         """
         Initialize the repository.
 
         Args:
-            client: Firestore client. If None, uses the global client.
+            db: Firestore client. If None, uses the global client.
         """
-        self._client = client
+        self._db = db
 
     @property
-    def client(self) -> Client:
+    def db(self) -> Client:
         """Get the Firestore client."""
-        if self._client is None:
-            self._client = get_firestore_client()
-        return self._client
+        if self._db is None:
+            self._db = get_firestore_client()
+        return self._db
 
     @property
     def collection(self):
         """Get the Firestore collection reference."""
-        return self.client.collection(self.collection_name)
+        return self.db.collection(self.collection_name)
 
     def _doc_to_model(self, doc: DocumentSnapshot) -> Optional[T]:
         """

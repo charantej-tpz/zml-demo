@@ -6,7 +6,7 @@ Combines all v1 endpoint routers into a single router.
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import authentication, health, vitals
+from app.api.v1.endpoints import authentication, health, medical_info, vitals
 
 # Create the main v1 router
 router = APIRouter()
@@ -15,3 +15,4 @@ router = APIRouter()
 router.include_router(health.router)
 router.include_router(authentication.router)
 router.include_router(vitals.router)
+router.include_router(medical_info.router)

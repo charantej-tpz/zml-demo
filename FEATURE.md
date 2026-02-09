@@ -128,7 +128,7 @@ class {Feature}Repository(I{Feature}Repository):
             raise DatabaseError(detail=str(e)) from e
 
     # Implement other IRepository methods...
-    
+
     async def get_{feature}(self, user_id: str) -> Optional[Dict[str, Any]]:
         return await self.get_by_id(user_id)
 

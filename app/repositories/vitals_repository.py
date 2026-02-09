@@ -7,6 +7,8 @@ Handles vitals data operations in Firebase Realtime Database.
 import logging
 from typing import Any, Dict, List, Optional
 
+from firebase_admin import db as firebase_rdb
+
 from app.core.exceptions import DatabaseError
 from app.db.realtime_db import RealtimeDBOperations
 from app.interfaces.repositories.vitals import IVitalsRepository
@@ -62,7 +64,13 @@ class VitalsRepository(IVitalsRepository):
         try:
             if not id:
                 raise ValueError("User ID is required for vitals")
-            self.rdb.set(f"users/{id}/vitals", data)
+            # Add timestamps
+            data_with_timestamps = {
+                **data,
+                "created_at": firebase_rdb.ServerValue.TIMESTAMP,
+                "updated_at": firebase_rdb.ServerValue.TIMESTAMP,
+            }
+            self.rdb.set(f"users/{id}/vitals", data_with_timestamps)
             return id
         except Exception as e:
             logger.error(f"Error creating vitals: {e}")
@@ -71,7 +79,12 @@ class VitalsRepository(IVitalsRepository):
     async def update(self, id: str, data: Dict[str, Any]) -> None:
         """Update vitals record for a user."""
         try:
-            self.rdb.update(f"users/{id}/vitals", data)
+            # Add updated_at timestamp
+            data_with_timestamp = {
+                **data,
+                "updated_at": firebase_db.ServerValue.TIMESTAMP,
+            }
+            self.rdb.update(f"users/{id}/vitals", data_with_timestamp)
         except Exception as e:
             logger.error(f"Error updating vitals for {id}: {e}")
             raise DatabaseError(detail=f"Failed to update vitals: {e}") from e

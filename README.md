@@ -1,84 +1,93 @@
 # ZML API
 
-A production-grade FastAPI boilerplate with Firestore integration.
+A production-grade FastAPI boilerplate with Firebase integration, following SOLID principles.
 
 ## Features
 
 - 🚀 **FastAPI** - Modern, fast web framework for building APIs
-- 🔥 **Firestore** - Google Cloud Firestore integration with emulator support
-- ⚙️ **Multi-environment** - Development, staging, and production configurations
-- 📦 **Repository Pattern** - Clean data access layer abstraction
-- 🛡️ **Error Handling** - Standardized error responses
-- 📝 **Logging** - Structured JSON logging for production
-- 🐳 **Docker** - Containerized deployment with multi-stage builds
-- ✅ **Testing** - Pytest setup with fixtures
+- 🔥 **Firebase** - Firestore + Realtime Database with emulator support
+- 🏗️ **SOLID Architecture** - Repository pattern with interfaces
+- 🔐 **Firebase Auth** - JWT token authentication
+- ⚙️ **Multi-environment** - Development, staging, and production configs
+- 📝 **Production Logging** - JSON logs with request tracing
+- 🐳 **Docker** - Containerized deployment
+- ✅ **Testing** - Pytest with 100% passing tests
+
+## API Endpoints
+
+| Method | Endpoint | Description | Database |
+|--------|----------|-------------|----------|
+| GET | `/api/v1/health` | Health check | - |
+| POST | `/api/v1/authentication/register` | Register user | Firebase Auth |
+| GET | `/api/v1/authentication/me` | Get current user | Firebase Auth |
+| POST | `/api/v1/vitals/{user_id}` | Update vitals | Realtime DB |
+| GET | `/api/v1/medical-info/{user_id}` | Get medical info | Firestore |
+| POST | `/api/v1/medical-info/{user_id}` | Set medical info | Firestore |
 
 ## Quick Start
 
-### Prerequisites
+```bash
+# 1. Create virtual environment
+python -m venv venv
+source venv/bin/activate
 
-- Python 3.11+
-- pip
-- Docker (optional, for containerized development)
+# 2. Install dependencies
+pip install -r requirements.txt
 
-### Installation
+# 3. Configure environment
+cp .env.example .env
 
-1. **Clone and navigate to the project:**
-   ```bash
-   cd zml-api-demo2
-   ```
+# 4. Run the server
+uvicorn app.main:app --reload --port 8080
+```
 
-2. **Create virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+**Access:** http://localhost:8080/docs
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Architecture
 
-4. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   ```
+```
+Endpoint → Service → Repository → Database
+   ↓          ↓           ↓
+IService  IRepository   db/rdb
+```
 
-5. **Run the development server:**
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| Endpoints | `app/api/v1/endpoints/` | HTTP handling |
+| Services | `app/services/` | Business logic |
+| Repositories | `app/repositories/` | Data access |
+| Interfaces | `app/interfaces/` | Contracts (SOLID) |
+| Database | `app/db/` | Firebase connections |
 
-6. **Access the API:**
-   - API: http://localhost:8080
-   - Docs: http://localhost:8080/docs
-   - Health: http://localhost:8080/api/v1/health
+## Database Access
+
+| Database | Variable | Function |
+|----------|----------|----------|
+| Firestore | `db` | `get_firestore_client()` |
+| Realtime DB | `rdb` | `get_realtime_client()` |
 
 ## Project Structure
 
 ```
-├── app/
-│   ├── api/              # API routes and endpoints
-│   │   ├── deps.py       # Dependency injection
-│   │   └── v1/           # API version 1
-│   ├── config/           # Configuration management
-│   ├── core/             # Core utilities (exceptions, logging)
-│   ├── db/               # Database clients
-│   ├── repositories/     # Data access layer
-│   ├── schemas/          # Pydantic models
-│   ├── services/         # Business logic
-│   └── main.py           # Application entry point
-├── tests/                # Test suite
-├── .env.example          # Environment template
-├── Dockerfile            # Container configuration
-├── docker-compose.yml    # Local development setup
-└── requirements.txt      # Python dependencies
+app/
+├── api/v1/endpoints/     # API routes
+├── interfaces/           # Abstract interfaces (SOLID)
+│   └── repositories/     # Repository interfaces
+├── services/             # Business logic
+├── repositories/         # Data access layer
+├── schemas/              # Pydantic models
+├── db/                   # Firebase clients
+├── core/                 # Exceptions, logging
+├── middleware/           # Request context
+└── main.py               # Entry point
 ```
 
 ## Documentation
 
-See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for detailed setup and development instructions.
+| Document | Purpose |
+|----------|---------|
+| [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | Setup & development guide |
+| [FEATURE.md](FEATURE.md) | Step-by-step feature development |
 
 ## License
 

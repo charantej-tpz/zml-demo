@@ -7,6 +7,7 @@ Handles medical info data operations in Firestore.
 import logging
 from typing import Any, Dict, List, Optional
 
+from google.cloud import firestore
 from google.cloud.firestore_v1 import Client
 
 from app.core.exceptions import DatabaseError
@@ -69,7 +70,15 @@ class MedicalInfoRepository(IMedicalInfoRepository):
         try:
             if not id:
                 raise ValueError("User ID is required")
-            self.db.collection(COLLECTION_NAME).document(id).set(data, merge=True)
+            # Add timestamps
+            data_with_timestamps = {
+                **data,
+                "created_at": firestore.SERVER_TIMESTAMP,
+                "updated_at": firestore.SERVER_TIMESTAMP,
+            }
+            self.db.collection(COLLECTION_NAME).document(id).set(
+                data_with_timestamps, merge=True
+            )
             return id
         except Exception as e:
             logger.error(f"Error creating medical info: {e}")
@@ -78,7 +87,12 @@ class MedicalInfoRepository(IMedicalInfoRepository):
     async def update(self, id: str, data: Dict[str, Any]) -> None:
         """Update medical info for a user."""
         try:
-            self.db.collection(COLLECTION_NAME).document(id).update(data)
+            # Add updated_at timestamp
+            data_with_timestamp = {
+                **data,
+                "updated_at": firestore.SERVER_TIMESTAMP,
+            }
+            self.db.collection(COLLECTION_NAME).document(id).update(data_with_timestamp)
         except Exception as e:
             logger.error(f"Error updating medical info for {id}: {e}")
             raise DatabaseError(detail=f"Failed to update medical info: {e}") from e
@@ -107,5 +121,3 @@ class MedicalInfoRepository(IMedicalInfoRepository):
     async def set_user_medical_info(self, user_id: str, data: Dict[str, Any]) -> None:
         """Set medical info for a specific user."""
         await self.create(data, user_id)
-
-

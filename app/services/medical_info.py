@@ -47,9 +47,7 @@ class MedicalInfoService(IMedicalInfoService):
             logger.exception(f"Error getting medical info for {user_id}: {e}")
             raise DatabaseError(detail=f"Failed to get medical info: {e}") from e
 
-    async def set_medical_info(
-        self, user_id: str, height: float, weight: float
-    ) -> Dict[str, Any]:
+    async def set_medical_info(self, user_id: str, height: float, weight: float) -> Dict[str, Any]:
         """
         Set medical info for a user.
 

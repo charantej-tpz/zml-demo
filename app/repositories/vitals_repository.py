@@ -7,11 +7,12 @@ Handles vitals data operations in Firebase Realtime Database.
 import logging
 from typing import Any, Dict, List, Optional
 
-from firebase_admin import db as firebase_rdb
-
 from app.core.exceptions import DatabaseError
 from app.db.realtime_db import RealtimeDBOperations
 from app.interfaces.repositories.vitals import IVitalsRepository
+
+# Realtime Database server timestamp sentinel
+RDB_SERVER_TIMESTAMP = {".sv": "timestamp"}
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,8 @@ class VitalsRepository(IVitalsRepository):
             # Add timestamps
             data_with_timestamps = {
                 **data,
-                "created_at": firebase_rdb.ServerValue.TIMESTAMP,
-                "updated_at": firebase_rdb.ServerValue.TIMESTAMP,
+                "created_at": RDB_SERVER_TIMESTAMP,
+                "updated_at": RDB_SERVER_TIMESTAMP,
             }
             self.rdb.set(f"users/{id}/vitals", data_with_timestamps)
             return id
@@ -82,7 +83,7 @@ class VitalsRepository(IVitalsRepository):
             # Add updated_at timestamp
             data_with_timestamp = {
                 **data,
-                "updated_at": firebase_rdb.ServerValue.TIMESTAMP,
+                "updated_at": RDB_SERVER_TIMESTAMP,
             }
             self.rdb.update(f"users/{id}/vitals", data_with_timestamp)
         except Exception as e:

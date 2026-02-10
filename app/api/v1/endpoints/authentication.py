@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 
 from app.db.firebase_admin import get_firebase_app
 from app.interfaces.authentication import IAuthenticationService
+from app.repositories.authentication import AuthenticationRepository
 from app.schemas.authentication import RegistrationRequest
 from app.services.authentication import AuthenticationService
 
@@ -23,7 +24,8 @@ def get_auth_service() -> IAuthenticationService:
         An implementation of IAuthenticationService.
     """
     firebase_app = get_firebase_app()
-    return AuthenticationService(firebase_app)
+    repo = AuthenticationRepository()
+    return AuthenticationService(firebase_app, repo)
 
 
 @router.post("/register")

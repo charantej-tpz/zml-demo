@@ -76,9 +76,7 @@ class MedicalInfoRepository(IMedicalInfoRepository):
                 "created_at": firestore.SERVER_TIMESTAMP,
                 "updated_at": firestore.SERVER_TIMESTAMP,
             }
-            self.db.collection(COLLECTION_NAME).document(id).set(
-                data_with_timestamps, merge=True
-            )
+            self.db.collection(COLLECTION_NAME).document(id).set(data_with_timestamps, merge=True)
             return id
         except Exception as e:
             logger.error(f"Error creating medical info: {e}")

@@ -7,7 +7,7 @@ Implements medical info business logic following SOLID principles.
 import logging
 from typing import Any, Dict, Optional
 
-from app.core.exceptions import DatabaseError, NotFoundError
+from app.core.exceptions import DatabaseError
 from app.interfaces.medical_info import IMedicalInfoService
 from app.interfaces.repositories.medical_info import IMedicalInfoRepository
 

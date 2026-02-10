@@ -21,6 +21,7 @@ from app.core.exceptions import (
     TokenExpiredError,
 )
 from app.interfaces.authentication import IAuthenticationService
+from app.interfaces.repositories.authentication import IAuthenticationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class AuthenticationService(IAuthenticationService):
     Handles user registration and other authentication operations.
     """
 
-    def __init__(self, firebase_app: firebase_admin.App) -> None:
+    def __init__(self, firebase_app: firebase_admin.App, repo: IAuthenticationRepository) -> None:
         """
         Initialize the authentication service.
 
@@ -40,6 +41,7 @@ class AuthenticationService(IAuthenticationService):
             firebase_app: Initialized Firebase Admin app instance.
         """
         self._app = firebase_app
+        self.repo = repo
 
     async def register(self, token: str):
         """
@@ -60,10 +62,18 @@ class AuthenticationService(IAuthenticationService):
         try:
             logger.info("Processing registration request")
 
-            decoded = auth.verify_id_token(token, app=self._app)
+            decoded = auth.verify_id_token(token, app=self._app, check_revoked=True)
             uid = decoded["uid"]
 
-            auth.set_custom_user_claims(uid, {"role": "Dawggy", "version": "1.0"})
+            custom_claims = {"role": "family_head", "version": "1.0"}
+
+            auth.set_custom_user_claims(uid, custom_claims)
+
+            user_data = {
+                **decoded,
+                **custom_claims,
+            }
+            await self.repo.register_user(uid, user_data)
 
             logger.info(f"User registered successfully: {uid}")
             return {

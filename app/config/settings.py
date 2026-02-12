@@ -96,6 +96,12 @@ class Settings(BaseSettings):
         description="Firebase Realtime Database URL (e.g., https://your-project.firebaseio.com)",
     )
 
+    # External Services
+    agent_url: str = Field(
+        default="http://0.0.0.0:8081",
+        description="Symptom checker agent service URL",
+    )
+
     # CORS
     cors_origins: str = Field(
         default="http://localhost:3000",

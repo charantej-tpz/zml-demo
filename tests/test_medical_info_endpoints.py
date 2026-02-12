@@ -2,9 +2,7 @@
 Tests for medical info API endpoints.
 """
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 
 class TestMedicalInfoEndpoints:
@@ -80,7 +78,7 @@ class TestMedicalInfoEndpoints:
         user_id = "user123"
         invalid_data = {
             "height": -10.0,  # Invalid: negative height
-            "weight": 0,       # Invalid: zero weight
+            "weight": 0,  # Invalid: zero weight
         }
 
         response = client.post(

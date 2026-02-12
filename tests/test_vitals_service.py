@@ -2,7 +2,7 @@
 Unit tests for Vitals Service.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -13,11 +13,8 @@ class TestVitalsService:
     @pytest.fixture
     def mock_vitals_repo(self):
         """Mock vitals repository."""
-        mock = MagicMock()
-        # Make update_user_vitals async
-        async def async_update(*args, **kwargs):
-            return None
-        mock.update_user_vitals = async_update
+        mock = AsyncMock()
+        mock.update_user_vitals.return_value = None
         return mock
 
     @pytest.fixture
@@ -49,7 +46,7 @@ class TestVitalsService:
 
         with patch("time.time", return_value=1234567890):
             with patch("random.randint", side_effect=[50, 120]):  # Low heartrate
-                result = await vitals_service.update_vitals(user_id)
+                _ = await vitals_service.update_vitals(user_id)
 
                 # Verify repository was called with correct status
                 call_args = mock_vitals_repo.update_user_vitals.call_args[0]
@@ -63,7 +60,7 @@ class TestVitalsService:
 
         with patch("time.time", return_value=1234567890):
             with patch("random.randint", side_effect=[75, 120]):  # Normal heartrate
-                result = await vitals_service.update_vitals(user_id)
+                _ = await vitals_service.update_vitals(user_id)
 
                 call_args = mock_vitals_repo.update_user_vitals.call_args[0]
                 vitals_data = call_args[1]
@@ -76,7 +73,7 @@ class TestVitalsService:
 
         with patch("time.time", return_value=1234567890):
             with patch("random.randint", side_effect=[75, 140]):  # High blood pressure
-                result = await vitals_service.update_vitals(user_id)
+                _ = await vitals_service.update_vitals(user_id)
 
                 call_args = mock_vitals_repo.update_user_vitals.call_args[0]
                 vitals_data = call_args[1]
@@ -89,7 +86,7 @@ class TestVitalsService:
 
         with patch("time.time", return_value=1234567890):
             with patch("random.randint", side_effect=[75, 120]):  # Normal blood pressure
-                result = await vitals_service.update_vitals(user_id)
+                _ = await vitals_service.update_vitals(user_id)
 
                 call_args = mock_vitals_repo.update_user_vitals.call_args[0]
                 vitals_data = call_args[1]

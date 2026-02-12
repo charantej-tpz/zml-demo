@@ -2,7 +2,7 @@
 Unit tests for Authentication Service.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -20,12 +20,8 @@ class TestAuthenticationService:
     @pytest.fixture
     def mock_auth_repo(self):
         """Mock authentication repository."""
-        mock = MagicMock()
-        mock.register_user = MagicMock(return_value=None)
-        # Make register_user an async mock
-        async def async_register(*args, **kwargs):
-            return None
-        mock.register_user = async_register
+        mock = AsyncMock()
+        mock.register_user.return_value = None
         return mock
 
     @pytest.fixture

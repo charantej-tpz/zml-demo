@@ -2,9 +2,7 @@
 Tests for vitals API endpoints.
 """
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 
 class TestVitalsEndpoints:

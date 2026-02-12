@@ -2,7 +2,7 @@
 Unit tests for Medical Info Service.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -13,14 +13,9 @@ class TestMedicalInfoService:
     @pytest.fixture
     def mock_medical_repo(self):
         """Mock medical info repository."""
-        mock = MagicMock()
-        # Make methods async
-        async def async_get(*args, **kwargs):
-            return None
-        async def async_set(*args, **kwargs):
-            return None
-        mock.get_user_medical_info = async_get
-        mock.set_user_medical_info = async_set
+        mock = AsyncMock()
+        mock.get_user_medical_info.return_value = None
+        mock.set_user_medical_info.return_value = None
         return mock
 
     @pytest.fixture
